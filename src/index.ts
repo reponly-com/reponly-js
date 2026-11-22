@@ -11,6 +11,7 @@
  *   await chat.setContactEmail("me@example.com"); // replies reach them by email after they leave
  *   await chat.markRead(conversationId, lastSeq); // while your chat UI is visible
  *   const triggers = watchTriggers(config.triggers, { projectKey, onShow }); // automatic messages
+ *   const presence = watchPresence({ projectKey, baseUrl, visitorKey, onPreview }); // live visitors
  */
 import type {
   ApiResponse,
@@ -30,6 +31,13 @@ export type * from "./types.js";
 export { customerChannelName } from "./types.js";
 export type { TokenStorage } from "./storage.js";
 export {
+  getVisitorKey,
+  watchPresence,
+  type PresencePage,
+  type PresenceWatchOptions,
+  type PresenceWatcher,
+} from "./presence.js";
+export {
   pickTrigger,
   watchTriggers,
   type TriggerVisit,
@@ -47,8 +55,9 @@ export type ReponlyClientOptions = {
   /** Where the customer token is persisted. Defaults to localStorage when available. */
   storage?: TokenStorage | null;
   /**
-   * The widget loader's key for this browser on the site (live visitors). Links the visitor's
-   * live presence to their chat, and hands them a conversation an agent started with them.
+   * This browser's key on the site (live visitors): `getVisitorKey(projectKey)` in a custom UI,
+   * the same one you pass to `watchPresence`. Links the visitor's live presence to their chat,
+   * and hands them a conversation an agent started with them from the Live page.
    */
   visitorKey?: string | null;
 };

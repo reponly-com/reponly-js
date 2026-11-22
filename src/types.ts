@@ -93,6 +93,22 @@ export type TriggerView = {
   audience: TriggerAudience;
 };
 
+/** An agent reply the visitor hasn't read yet, for a bubble by your closed chat (live visitors). */
+export type PresencePreview = {
+  messageId: string;
+  text: string;
+  senderName: string | null;
+  senderAvatarUrl: string | null;
+};
+
+/** What POST /api/v1/presence answers. */
+export type PresenceHeartbeatView = {
+  /** False when live visitors are off for this product: stop reporting. */
+  enabled: boolean;
+  intervalSeconds: number;
+  preview: PresencePreview | null;
+};
+
 export type MessageView = {
   id: string;
   conversationId: string;

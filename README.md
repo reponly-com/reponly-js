@@ -109,6 +109,30 @@ await chat.sendMessage(text, { welcomeShown: true, triggerId: trigger?.id });
 
 Only a new conversation takes the trigger as its greeting. If the visitor already has one, show the trigger's text, but there's no need to send `triggerId`. Call `watcher.refresh()` after `canShow()` turns true again, and `watcher.stop()` when your UI unmounts. `pickTrigger(triggers, { path, returning, isShown })` is the matching rule on its own, if you schedule things yourself.
 
+## Live visitors (Pro)
+
+The hosted widget reports which page each visitor is on, so they appear on the Live page and as "Online now" in the inbox, and agents can message them before they ever open the chat. A custom UI does the same with `watchPresence`. Run it on every page, not only while the chat is open:
+
+```ts
+import { getVisitorKey, ReponlyClient, watchPresence } from "reponly";
+
+const visitorKey = getVisitorKey("pk_..."); // this browser's key on your site, kept in localStorage
+const chat = new ReponlyClient({ projectKey: "pk_...", baseUrl: "https://reponly.com", visitorKey });
+
+const presence = watchPresence({
+  projectKey: "pk_...",
+  baseUrl: "https://reponly.com",
+  visitorKey,
+  onPreview: (reply) => showBubble(reply.senderName, reply.text), // an agent reply they haven't read
+  canShowPreview: () => !chatIsOpen && launcherIsVisible,
+});
+
+// When the visitor dismisses that bubble or opens your chat:
+presence.previewSeen();
+```
+
+It reports while the tab is visible, every 15 seconds and on client-side navigation, and stops by itself when live visitors are off for the product (Free plan, switched off, or an origin outside the allowed ones). Pass the same `visitorKey` to `ReponlyClient`: that links the visit to the visitor's chat, and gives them the conversation an agent started from the Live page when they open it. Each reply is handed to `onPreview` once; after `previewSeen()` it doesn't come back on later pages. Call `presence.stop()` when your UI unmounts.
+
 ## Files
 
 Upload first, then send the ids. A message can contain only files.
@@ -156,7 +180,7 @@ Every failed call throws a `ReponlyError` with `code`, `message`, `status` and `
 
 | Method | Description |
 | --- | --- |
-| `new ReponlyClient({ projectKey, baseUrl?, storage? })` | `baseUrl` defaults to the current origin. `storage` defaults to localStorage, with an in-memory fallback. |
+| `new ReponlyClient({ projectKey, baseUrl?, storage?, visitorKey? })` | `baseUrl` defaults to the current origin. `storage` defaults to localStorage, with an in-memory fallback. `visitorKey`: from `getVisitorKey`, for live visitors. |
 | `getConfig()` | The product's public settings (cached). |
 | `connect(identityToken?)` | Starts or resumes the session. |
 | `identify(identityToken)` / `logout()` | Sign a user in or out. |
@@ -167,6 +191,8 @@ Every failed call throws a `ReponlyError` with `code`, `message`, `status` and `
 | `setContactEmail(email)` | The address replies are emailed to. |
 | `markRead(conversationId, seq)` | Read receipt. |
 | `watchTriggers(triggers, options)` | Shows automatic messages with the hosted widget's rules. Returns `{ chatOpened, refresh, stop }`. |
+| `getVisitorKey(projectKey, storage?)` | This browser's visitor key on your site, created once. |
+| `watchPresence(options)` | Reports the visitor's page for live visitors and hands over unread agent replies. Returns `{ visitorKey, previewSeen, refresh, stop }`. |
 | `subscribe(handler)` | Real-time events: `message.created`, `restriction.updated` and `connection` (`open` after every (re)subscribe: refetch then). Reuses the session from `connect()`. Returns an unsubscribe function. |
 
 ## License

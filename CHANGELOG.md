@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+- `watchPresence({ projectKey, baseUrl, visitorKey, onPreview, canShowPreview })`: live visitors for custom UIs. Reports the visitor's page while the tab is visible (every 15 s and on client-side navigation), stops when live visitors are off, and hands over the newest agent reply they haven't read. `previewSeen()` keeps a reply from coming back.
+- `getVisitorKey(projectKey, storage?)`: this browser's visitor key, stored under the same name the hosted widget uses. Pass it to `ReponlyClient` as `visitorKey`.
+- Types: `PresencePreview`, `PresenceHeartbeatView`.
+
 ## 0.1.2
 
 - `sendMessage({ welcomeShown: true })`: tell Reponly your UI showed the welcome text, so it is kept as the conversation's greeting and agents see what the visitor answered.
