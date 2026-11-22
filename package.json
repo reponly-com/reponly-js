@@ -1,0 +1,51 @@
+{
+  "name": "reponly",
+  "version": "0.1.0",
+  "description": "Reponly customer SDK: build your own in-app support chat on the Reponly customer API.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "reponly",
+    "support",
+    "chat",
+    "live-chat",
+    "customer-support",
+    "sdk"
+  ],
+  "homepage": "https://reponly.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/reponly-com/reponly-js.git"
+  },
+  "bugs": {
+    "url": "https://github.com/reponly-com/reponly-js/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
