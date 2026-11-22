@@ -44,6 +44,21 @@ describe("ReponlyClient", () => {
     expect(bodies[1]).toMatchObject({ customerToken: "tok-1" });
   });
 
+  it("sends what the custom UI showed above the chat, so agents see what the visitor answered", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        if (url.endsWith("/sessions")) return json(session("tok"));
+        bodies.push(JSON.parse(String(init.body)));
+        return json({ success: true, data: { message: {}, conversationId: "c1" }, error: null });
+      }),
+    );
+    const client = new ReponlyClient({ projectKey: "pk_test", baseUrl: "http://x", storage: sharedStorage() });
+    await client.sendMessage("hi", { welcomeShown: true, triggerId: "pricing01", context: null });
+    expect(bodies[0]).toMatchObject({ welcomeShown: true, triggerId: "pricing01" });
+  });
+
   it("surfaces structured rate-limit errors with a retry time", async () => {
     const retryAt = "2026-11-17T12:05:00.000Z";
     vi.stubGlobal(

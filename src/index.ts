@@ -10,6 +10,7 @@
  *   await chat.sendMessage("Screenshot", { attachmentIds: [file.id] });
  *   await chat.setContactEmail("me@example.com"); // replies reach them by email after they leave
  *   await chat.markRead(conversationId, lastSeq); // while your chat UI is visible
+ *   const triggers = watchTriggers(config.triggers, { projectKey, onShow }); // automatic messages
  */
 import type {
   ApiResponse,
@@ -23,15 +24,18 @@ import type {
 } from "./types.js";
 import { customerChannelName } from "./types.js";
 import { PusherLite } from "./pusherLite.js";
+import { defaultStorage, type TokenStorage } from "./storage.js";
 
 export type * from "./types.js";
 export { customerChannelName } from "./types.js";
-
-export type TokenStorage = {
-  get(key: string): string | null;
-  set(key: string, value: string): void;
-  remove(key: string): void;
-};
+export type { TokenStorage } from "./storage.js";
+export {
+  pickTrigger,
+  watchTriggers,
+  type TriggerVisit,
+  type TriggerWatchOptions,
+  type TriggerWatcher,
+} from "./triggers.js";
 
 export type ConnectionEvent = { type: "connection"; state: "open" | "reconnecting" };
 export type ReponlyEvent = CustomerRealtimeEvent | ConnectionEvent;
@@ -98,8 +102,14 @@ export type SendMessageOptions = {
    */
   context?: MessageContext | null;
   /**
-   * Hosted widget: the automatic message the visitor answered, saved as the chat's greeting.
-   * Custom UIs can leave it out.
+   * Set to true when your UI showed `config.appearance.welcomeText` above the chat. Starting a
+   * conversation, Reponly keeps that text as its greeting, so agents see what the visitor was
+   * answering. Leave it out if you show no welcome text.
+   */
+  welcomeShown?: boolean;
+  /**
+   * The id of the automatic message (from `config.triggers`) your UI showed and the visitor
+   * answered. Starting a conversation, its text becomes the greeting instead of the welcome text.
    */
   triggerId?: string;
 };
@@ -137,30 +147,6 @@ export class ReponlyError extends Error {
   }
 }
 
-const memoryStorage = (): TokenStorage => {
-  const map = new Map<string, string>();
-  return {
-    get: (k) => map.get(k) ?? null,
-    set: (k, v) => void map.set(k, v),
-    remove: (k) => void map.delete(k),
-  };
-};
-
-function defaultStorage(): TokenStorage {
-  try {
-    const probe = "__reponly_probe__";
-    window.localStorage.setItem(probe, "1");
-    window.localStorage.removeItem(probe);
-    return {
-      get: (k) => window.localStorage.getItem(k),
-      set: (k, v) => window.localStorage.setItem(k, v),
-      remove: (k) => window.localStorage.removeItem(k),
-    };
-  } catch {
-    return memoryStorage();
-  }
-}
-
 export function createClientMessageId(): string {
   const random =
     typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -187,7 +173,7 @@ export class ReponlyClient {
     this.baseUrl = (
       baseUrl ?? (typeof window !== "undefined" ? window.location.origin : "")
     ).replace(/\/$/, "");
-    this.storage = storage ?? (typeof window !== "undefined" ? defaultStorage() : memoryStorage());
+    this.storage = storage ?? defaultStorage();
     this.token = this.storage.get(this.tokenKey);
   }
 
@@ -327,6 +313,7 @@ export class ReponlyClient {
       clientMessageId: options.clientMessageId ?? createClientMessageId(),
       contactEmail: options.contactEmail,
       attachmentIds: options.attachmentIds,
+      welcomeShown: options.welcomeShown,
       triggerId: options.triggerId,
       context:
         options.context === undefined ? currentPageContext() : (options.context ?? undefined),

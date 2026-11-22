@@ -77,6 +77,38 @@ Conversations come newest first; messages are ordered by `seq`. Each conversatio
 const unread = messages.filter((m) => m.senderType !== "customer" && m.seq > conversations[0].customerLastReadSeq).length;
 ```
 
+## Welcome text and automatic messages
+
+If your chat shows `config.appearance.welcomeText` above the messages, say so when you send. Reponly keeps that text as the conversation's greeting, so the agent sees what the visitor was answering. Without it, the agent's inbox starts at the visitor's first message.
+
+```ts
+const welcome = config.appearance.welcomeText;
+await chat.sendMessage(text, { welcomeShown: Boolean(welcome) });
+```
+
+Both only matter on the message that starts a conversation; sending them on every message is fine.
+
+### Automatic messages (Pro)
+
+`config.triggers` lists the product's automatic messages. The hosted widget shows one after `delaySeconds` on a page whose path contains `pathContains`, to the right `audience` (new or returning visitors), at most once per visitor each, and never again once they've opened the chat. `watchTriggers` applies the same rules for your UI, including client-side navigation:
+
+```ts
+import { watchTriggers } from "reponly";
+
+const watcher = watchTriggers(config.triggers, {
+  projectKey: "pk_...",
+  onShow: (trigger) => showBubble(trigger.message), // e.g. a speech bubble by your chat button
+  canShow: () => !chatIsOpen && launcherIsVisible,   // checked when scheduling and when the delay ends
+});
+
+// When the visitor opens your chat, from the bubble or any other way:
+const trigger = watcher.chatOpened(); // stops the watcher for good
+// Show trigger.message at the top of the chat instead of the welcome text, then:
+await chat.sendMessage(text, { welcomeShown: true, triggerId: trigger?.id });
+```
+
+Only a new conversation takes the trigger as its greeting. If the visitor already has one, show the trigger's text, but there's no need to send `triggerId`. Call `watcher.refresh()` after `canShow()` turns true again, and `watcher.stop()` when your UI unmounts. `pickTrigger(triggers, { path, returning, isShown })` is the matching rule on its own, if you schedule things yourself.
+
 ## Files
 
 Upload first, then send the ids. A message can contain only files.
@@ -130,10 +162,11 @@ Every failed call throws a `ReponlyError` with `code`, `message`, `status` and `
 | `identify(identityToken)` / `logout()` | Sign a user in or out. |
 | `getStatus()` | Any restriction or cooldown on this customer. |
 | `listConversations()` / `getMessages(id, afterSeq?)` | History, newest conversation first. |
-| `sendMessage(content, options?)` | Options: `conversationId`, `clientMessageId`, `attachmentIds`, `contactEmail`, `context`. |
+| `sendMessage(content, options?)` | Options: `conversationId`, `clientMessageId`, `attachmentIds`, `contactEmail`, `context`, `welcomeShown`, `triggerId`. |
 | `uploadAttachment(file, name?)` | Upload one file and get back an `AttachmentView`. |
 | `setContactEmail(email)` | The address replies are emailed to. |
 | `markRead(conversationId, seq)` | Read receipt. |
+| `watchTriggers(triggers, options)` | Shows automatic messages with the hosted widget's rules. Returns `{ chatOpened, refresh, stop }`. |
 | `subscribe(handler)` | Real-time events: `message.created`, `restriction.updated` and `connection` (`open` after every (re)subscribe: refetch then). Reuses the session from `connect()`. Returns an unsubscribe function. |
 
 ## License
