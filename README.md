@@ -1,6 +1,6 @@
 # reponly
 
-The JavaScript SDK for [Reponly](https://reponly.com) customer chat. Use it to build your own in-app support chat instead of the hosted widget. It handles sessions, token storage, retries and real-time messages for you.
+The JavaScript SDK for [Reponly](https://reponly.com) customer chat. Use it to build your own in-app support chat instead of the hosted widget. It handles sessions, token storage, expired-session recovery and real-time messages for you. When a send fails, retry it with the same `clientMessageId` so it is never delivered twice.
 
 - No dependencies. It ships its own small real-time client.
 - Works in any browser framework, or with none.
@@ -71,7 +71,11 @@ const messages = await chat.getMessages(conversations[0].id);
 const newer = await chat.getMessages(conversationId, lastSeenSeq);
 ```
 
-Messages are ordered by `seq`.
+Conversations come newest first; messages are ordered by `seq`. Each conversation carries `customerLastReadSeq`, the newest message the customer has read on any device, so you can count unread agent replies without storing anything yourself:
+
+```ts
+const unread = messages.filter((m) => m.senderType !== "customer" && m.seq > conversations[0].customerLastReadSeq).length;
+```
 
 ## Files
 
@@ -125,12 +129,12 @@ Every failed call throws a `ReponlyError` with `code`, `message`, `status` and `
 | `connect(identityToken?)` | Starts or resumes the session. |
 | `identify(identityToken)` / `logout()` | Sign a user in or out. |
 | `getStatus()` | Any restriction or cooldown on this customer. |
-| `listConversations()` / `getMessages(id, afterSeq?)` | History. |
+| `listConversations()` / `getMessages(id, afterSeq?)` | History, newest conversation first. |
 | `sendMessage(content, options?)` | Options: `conversationId`, `clientMessageId`, `attachmentIds`, `contactEmail`, `context`. |
 | `uploadAttachment(file, name?)` | Upload one file and get back an `AttachmentView`. |
 | `setContactEmail(email)` | The address replies are emailed to. |
 | `markRead(conversationId, seq)` | Read receipt. |
-| `subscribe(handler)` | Real-time events. Returns an unsubscribe function. |
+| `subscribe(handler)` | Real-time events: `message.created`, `restriction.updated` and `connection` (`open` after every (re)subscribe: refetch then). Reuses the session from `connect()`. Returns an unsubscribe function. |
 
 ## License
 

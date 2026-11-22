@@ -1,6 +1,6 @@
 {
   "name": "reponly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Reponly customer SDK: build your own in-app support chat on the Reponly customer API.",
   "license": "MIT",
   "type": "module",

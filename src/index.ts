@@ -389,7 +389,10 @@ export class ReponlyClient {
 
     let onIdentityChange: () => void = () => undefined;
     const start = async () => {
-      const [config] = await Promise.all([this.getConfig(), this.connect()]);
+      // Reuse the session when connect()/identify() already ran: a second
+      // POST /sessions per page load only spends the visitor's session quota.
+      const session = this.customerId && this.currentToken() ? null : this.connect();
+      const [config] = await Promise.all([this.getConfig(), session]);
       if (stopped) return;
       socket = new PusherLite({
         ...config.realtime,

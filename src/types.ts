@@ -153,6 +153,11 @@ export type CustomerConversationView = {
   lastMessageAt: string | null;
   lastMessagePreview: string;
   messageSeq: number;
+  /**
+   * The newest seq the customer has read, on any device (from markRead). Agent messages
+   * after it are unread, so badges agree across browsers.
+   */
+  customerLastReadSeq: number;
 };
 
 /** Private channel of one customer: `private-{prefix}customer.{customerId}`. */

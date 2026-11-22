@@ -151,4 +151,28 @@ describe("ReponlyClient.subscribe", () => {
     off();
     expect(latest().readyState).toBe(3);
   });
+  it("reuses the session from connect() instead of creating a second one", async () => {
+    const customer = "c".repeat(24);
+    vi.stubGlobal("WebSocket", FakeSocket);
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url.endsWith("/config")) return ok({ realtime });
+      if (url.endsWith("/sessions")) return ok({ customerToken: "tok-c", customer: { id: customer, kind: "identified", name: null } });
+      if (url.endsWith("/realtime/auth")) return new Response(JSON.stringify({ auth: "k:sig" }));
+      return ok([]);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const client = new ReponlyClient({ projectKey: "pk_reuse", baseUrl: "http://x", storage: storage() });
+
+    await client.connect("identity-token");
+    const off = client.subscribe(() => undefined);
+    await vi.waitFor(() => expect(FakeSocket.instances).toHaveLength(1));
+    latest().established();
+    await vi.waitFor(() =>
+      expect(latest().sent).toContainEqual({ event: "pusher:subscribe", data: { channel: `private-customer.${customer}`, auth: "k:sig" } }),
+    );
+
+    const sessionCalls = fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/sessions"));
+    expect(sessionCalls).toHaveLength(1);
+    off();
+  });
 });
