@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+
+- Package metadata only: a clearer npm description and keywords, and links to the hosted docs and `llms-full.txt`. No code changes.
+- Docs: Allowed domains are optional. With none listed, any origin may call; once any is listed, other origins get `403 origin_not_allowed`.
+
 ## 0.1.4
 
 - Agents can edit and delete messages they sent. New real-time events: `message.updated` (replace the message with that `id`) and `message.deleted` (`{ conversationId, messageId }`: remove it).

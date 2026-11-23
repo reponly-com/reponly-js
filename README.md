@@ -1,6 +1,10 @@
 # reponly
 
-The JavaScript SDK for [Reponly](https://reponly.com) customer chat. Use it to build your own in-app support chat instead of the hosted widget. It handles sessions, token storage, expired-session recovery and real-time messages for you. When a send fails, retry it with the same `clientMessageId` so it is never delivered twice.
+The JavaScript SDK for [Reponly](https://reponly.com), human-first live chat for founders running more than one product: every website's and app's chat lands in one inbox.
+
+Only need a chat button on your site? You don't need this package: paste the one-line script tag from the [install guide](https://reponly.com/docs/install). Full docs: [reponly.com/docs](https://reponly.com/docs) (for AI agents: [llms-full.txt](https://reponly.com/llms-full.txt)).
+
+This package is for custom UIs: use it to build your own in-app support chat instead of the hosted widget. It handles sessions, token storage, expired-session recovery and real-time messages for you. When a send fails, retry it with the same `clientMessageId` so it is never delivered twice.
 
 - No dependencies. It ships its own small real-time client.
 - Works in any browser framework, or with none.
@@ -11,7 +15,7 @@ The hosted Reponly widget runs on this same SDK.
 ## Before you start
 
 - A custom UI needs the **Pro** plan.
-- Add your site's origin to **Allowed domains** in the product's settings. Otherwise browser calls fail with `403 origin_not_allowed`.
+- Add your site's origin to **Allowed domains** in the product's settings, so no other site can use your chat. Once any domain is listed, calls from other origins fail with `403 origin_not_allowed`; origins must match exactly, scheme and port included.
 - Copy your **project key** (`pk_...`) and the **base URL** from the product's **Custom UI** tab.
 
 ## Install
