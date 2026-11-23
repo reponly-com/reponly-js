@@ -125,10 +125,16 @@ export type MessageView = {
   context: VisitorContextView | null;
   clientMessageId: string | null;
   createdAt: string;
+  /** When an agent last edited the text; null if never edited. */
+  editedAt: string | null;
 };
 
 export type CustomerRealtimeEvent =
   | { type: "message.created"; message: MessageView }
+  /** An agent edited a message: replace the one with this id. */
+  | { type: "message.updated"; message: MessageView }
+  /** An agent deleted a message: remove the one with this id. */
+  | { type: "message.deleted"; conversationId: string; messageId: string }
   | { type: "restriction.updated" };
 
 export type PublicProjectConfig = {

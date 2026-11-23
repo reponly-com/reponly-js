@@ -38,6 +38,8 @@ const config = await chat.getConfig(); // welcome text, availability, askForEmai
 
 const off = chat.subscribe((event) => {
   if (event.type === "message.created") render(event.message);
+  if (event.type === "message.updated") replace(event.message); // an agent edited it
+  if (event.type === "message.deleted") remove(event.messageId); // an agent deleted it
   if (event.type === "connection" && event.state === "open") resync(); // after every reconnect
 });
 
@@ -67,15 +69,21 @@ chat.logout();
 const conversations = await chat.listConversations();
 const messages = await chat.getMessages(conversations[0].id);
 
-// After a reconnect, fetch only what you missed:
+// Only messages after a seq, e.g. to page through a long thread:
 const newer = await chat.getMessages(conversationId, lastSeenSeq);
 ```
+
+Agents can edit or delete messages they sent. Live, you get `message.updated` (replace the message with that `id`) and `message.deleted` (remove it). After a reconnect, fetch the whole conversation with `getMessages(id)` and replace your list rather than merging, so edits and deletions you missed show up; keep any of your own messages that are still sending. Show edited messages (`editedAt` set) with a small "edited" next to the time, and don't play a sound or count them as unread again.
 
 Conversations come newest first; messages are ordered by `seq`. Each conversation carries `customerLastReadSeq`, the newest message the customer has read on any device, so you can count unread agent replies without storing anything yourself:
 
 ```ts
 const unread = messages.filter((m) => m.senderType !== "customer" && m.seq > conversations[0].customerLastReadSeq).length;
 ```
+
+Agent messages carry `senderName` (their first name) and `senderAvatarUrl` (their current photo, or `null`). Show both next to agent replies, so the visitor sees who they're talking to: use the photo only when it's an `https://` URL, and fall back to the name's initial. Automatic and system messages have neither.
+
+For new agent replies that arrive live (a `message.created` event for a message you don't have yet, not history or a resync), play a short sound, at most once per burst, and give the chat a mute button that's remembered in localStorage. Browsers only allow sound after the visitor has clicked or typed on the page.
 
 ## Welcome text and automatic messages
 
@@ -193,7 +201,7 @@ Every failed call throws a `ReponlyError` with `code`, `message`, `status` and `
 | `watchTriggers(triggers, options)` | Shows automatic messages with the hosted widget's rules. Returns `{ chatOpened, refresh, stop }`. |
 | `getVisitorKey(projectKey, storage?)` | This browser's visitor key on your site, created once. |
 | `watchPresence(options)` | Reports the visitor's page for live visitors and hands over unread agent replies. Returns `{ visitorKey, previewSeen, refresh, stop }`. |
-| `subscribe(handler)` | Real-time events: `message.created`, `restriction.updated` and `connection` (`open` after every (re)subscribe: refetch then). Reuses the session from `connect()`. Returns an unsubscribe function. |
+| `subscribe(handler)` | Real-time events: `message.created`, `message.updated`, `message.deleted`, `restriction.updated` and `connection` (`open` after every (re)subscribe: refetch then). Reuses the session from `connect()`. Returns an unsubscribe function. |
 
 ## License
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+
+- Agents can edit and delete messages they sent. New real-time events: `message.updated` (replace the message with that `id`) and `message.deleted` (`{ conversationId, messageId }`: remove it).
+- `MessageView.editedAt`: when an agent last edited the text, or `null`.
+- Docs: after a reconnect, refetch the whole conversation and replace your list, so edits and deletions you missed show up.
+
 ## 0.1.3
 
 - `watchPresence({ projectKey, baseUrl, visitorKey, onPreview, canShowPreview })`: live visitors for custom UIs. Reports the visitor's page while the tab is visible (every 15 s and on client-side navigation), stops when live visitors are off, and hands over the newest agent reply they haven't read. `previewSeen()` keeps a reply from coming back.
